@@ -1,0 +1,68 @@
+services:
+
+  # ── MLflow Tracking Server ─────────────────────────────────────────────────
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow_data:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── Fraud Detection API ────────────────────────────────────────────────────
+  fraud-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fraud_app
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=data/model.json
+      - MODEL_VERSION=1
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Prometheus ─────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+
+  # ── Grafana ────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    restart: unless-stopped

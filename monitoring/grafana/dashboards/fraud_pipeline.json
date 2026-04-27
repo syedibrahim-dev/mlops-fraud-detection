@@ -1,0 +1,187 @@
+{
+  "title": "Fraud Detection — Continual Learning Pipeline",
+  "uid": "fraud-pipeline",
+  "schemaVersion": 38,
+  "version": 2,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Predictions",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "sum(fraud_predictions_total)", "legendFormat": "Total" }]
+    },
+    {
+      "id": 2,
+      "title": "Fraud Rate (last 100)",
+      "type": "gauge",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red", "value": 0.15 }
+            ]
+          }
+        }
+      },
+      "targets": [{ "expr": "fraud_rate_last_100", "legendFormat": "Fraud Rate" }]
+    },
+    {
+      "id": 3,
+      "title": "Prediction Latency p99",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, rate(prediction_latency_seconds_bucket[5m]))",
+        "legendFormat": "p99"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Drift Detected",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "text": "No Drift", "color": "green" }, "1": { "text": "DRIFT!", "color": "red" } }, "type": "value" }
+          ]
+        }
+      },
+      "targets": [{ "expr": "drift_detected", "legendFormat": "Drift" }]
+    },
+    {
+      "id": 5,
+      "title": "PSI Drift Ratio (fraction of features drifted)",
+      "type": "gauge",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.2 },
+              { "color": "red", "value": 0.4 }
+            ]
+          }
+        }
+      },
+      "targets": [{ "expr": "drift_psi_ratio", "legendFormat": "PSI Ratio" }]
+    },
+    {
+      "id": 6,
+      "title": "KS Drift Ratio",
+      "type": "gauge",
+      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.2 },
+              { "color": "red", "value": 0.4 }
+            ]
+          }
+        }
+      },
+      "targets": [{ "expr": "drift_ks_ratio", "legendFormat": "KS Ratio" }]
+    },
+    {
+      "id": 7,
+      "title": "Plasticity Score by Strategy (F1 on newest window)",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 4, "w": 8, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 0.6 },
+              { "color": "green", "value": 0.8 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "cl_plasticity_score{strategy='finetune'}", "legendFormat": "Fine-Tuning" },
+        { "expr": "cl_plasticity_score{strategy='experience_replay'}", "legendFormat": "Experience Replay" },
+        { "expr": "cl_plasticity_score{strategy='sliding_window'}", "legendFormat": "Sliding Window" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Stability Score by Strategy (F1 on old windows)",
+      "type": "bargauge",
+      "gridPos": { "x": 8, "y": 4, "w": 8, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.7 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "cl_stability_score{strategy='finetune'}", "legendFormat": "Fine-Tuning" },
+        { "expr": "cl_stability_score{strategy='experience_replay'}", "legendFormat": "Experience Replay" },
+        { "expr": "cl_stability_score{strategy='sliding_window'}", "legendFormat": "Sliding Window" }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Forgetting Rate by Strategy (lower is better)",
+      "type": "bargauge",
+      "gridPos": { "x": 16, "y": 4, "w": 8, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 0.5,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 0.2 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "cl_forgetting_rate{strategy='finetune'}", "legendFormat": "Fine-Tuning" },
+        { "expr": "cl_forgetting_rate{strategy='experience_replay'}", "legendFormat": "Experience Replay" },
+        { "expr": "cl_forgetting_rate{strategy='sliding_window'}", "legendFormat": "Sliding Window" }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Predictions Over Time",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(fraud_predictions_total{result='fraud'}[1m])", "legendFormat": "Fraud/sec" },
+        { "expr": "rate(fraud_predictions_total{result='legit'}[1m])", "legendFormat": "Legit/sec" }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Latency Distribution",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, rate(prediction_latency_seconds_bucket[5m]))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, rate(prediction_latency_seconds_bucket[5m]))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, rate(prediction_latency_seconds_bucket[5m]))", "legendFormat": "p99" }
+      ]
+    }
+  ]
+}

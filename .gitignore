@@ -1,0 +1,12 @@
+data/creditcard.csv
+data/*.csv
+venv/
+mlflow_data/
+mlartifacts/
+mlruns/
+__pycache__/
+*.pyc
+*.pyo
+*.pdf
+*.Zone.Identifier
+.env

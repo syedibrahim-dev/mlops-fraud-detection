@@ -1,0 +1,10 @@
+data/creditcard.csv
+data/*.csv
+venv/
+mlflow_data/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+tests/
+*.pdf
