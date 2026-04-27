@@ -9,12 +9,12 @@ from fastapi.testclient import TestClient
 import xgboost as xgb
 import os, tempfile
 
-# Create a tiny dummy model before importing serve
+# Create a tiny dummy model before importing serve (use Booster to avoid sklearn dep)
 _tmp = tempfile.mkdtemp()
 _model_path = os.path.join(_tmp, "model.json")
-_dummy = xgb.XGBClassifier(n_estimators=1)
-_dummy.fit(np.zeros((4, 30)), [0, 1, 0, 1])
-_dummy.save_model(_model_path)
+_dummy = xgb.DMatrix(np.zeros((4, 30)), label=[0, 1, 0, 1])
+_booster = xgb.train({"objective": "binary:logistic", "nthread": 1}, _dummy, num_boost_round=1)
+_booster.save_model(_model_path)
 
 os.environ["MODEL_PATH"] = _model_path
 os.environ["MODEL_VERSION"] = "test"

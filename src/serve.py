@@ -7,7 +7,7 @@ import os
 import time
 import numpy as np
 import xgboost as xgb
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from pydantic import BaseModel
 from prometheus_client import (
     Counter, Histogram, Gauge,
@@ -72,8 +72,8 @@ MODEL_VERSION_TAG = os.getenv("MODEL_VERSION", "1")
 
 app = FastAPI(title="Fraud Detection API")
 
-# ── Load model ──────────────────────────────────────────────────────────────
-model = xgb.XGBClassifier()
+# ── Load model (native Booster API — no sklearn dependency) ─────────────────
+model = xgb.Booster()
 model.load_model(MODEL_PATH)
 MODEL_VERSION.labels(version=MODEL_VERSION_TAG).set(1)
 
@@ -105,7 +105,8 @@ def predict(req: PredictRequest):
 
     start = time.time()
     x = np.array(req.features).reshape(1, -1)
-    proba = float(model.predict_proba(x)[0][1])
+    dmatrix = xgb.DMatrix(x)
+    proba = float(model.predict(dmatrix)[0])
     is_fraud = proba >= 0.5
     elapsed = time.time() - start
 
